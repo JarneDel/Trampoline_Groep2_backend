@@ -2,15 +2,15 @@
   "name": "trampoline-groep2-backend",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./app.js"
   },
   "dependencies": {
-    "cookie-parser": "~1.4.4",
-    "debug": "~2.6.9",
+    "@serialport/parser-readline": "^10.5.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "http-errors": "~1.6.3",
+    "http-errors": "^2.0.0",
     "morgan": "~1.9.1",
     "serialport": "^10.5.0",
     "socket.io": "^4.5.4"
