@@ -1,0 +1,19 @@
+{
+  "name": "trampoline_groep2_backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JarneDel/Trampoline_Groep2_Backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JarneDel/Trampoline_Groep2_Backend/issues"
+  },
+  "homepage": "https://github.com/JarneDel/Trampoline_Groep2_Backend#readme"
+}
