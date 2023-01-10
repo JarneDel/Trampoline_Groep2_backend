@@ -9,8 +9,8 @@ const getSerialPort = function (portNumber, baudRate, socket) {
                 return console.log('Error: ', err.message)
             }
         });
-    }catch (e) {
-        socket.emit('log', e.message);
+    } catch (e) {
+        socket.send(JSON.stringify({log:  e.message}));
     }
 }
 
@@ -24,25 +24,22 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
         });
 
         // ...
-        socket.on("disconnect", (reason) => {
+        socket.on('close', (reason) => {
             console.log("Connection closed: ", reason);
             serial.isOpen && serial.close();
         });
-        socket.on("reconnect", () => {
-            console.log("Reconnected");
-            !serial.isOpen && serial.open();
-        });
-        socket.on('stop', function () {
-            serial.isOpen && serial.close();
-        });
-        socket.on('start', function () {
-            !serial.isOpen && serial.open();
+        socket.on('message', function (msg) {
+            if (msg.data.stop) {
+                serial.isOpen && serial.close();
+            }
+            if (msg.data.start) {
+                !serial.isOpen && serial.close()
+            }
         });
         return parser;
-    }
-    catch (error) {
+    } catch (error) {
         console.log(error)
-        socket.emit('log', error);
+        socket.send(JSON.stringify({log: error}));
     }
 
 }
