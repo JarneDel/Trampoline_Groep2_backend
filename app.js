@@ -21,6 +21,11 @@ io.on("connection", (socket) => {
     console.log('Data:', data);
     socket.emit('data', data);
   });
+  const parser2 = SerialSocket(socket, process.env.ESP2_PORT, process.env.ESP2_BAUD);
+  parser2.on('data', function (data) {
+    console.log('Data2:', data);
+    socket.emit('data2', data);
+  });
 });
 
 

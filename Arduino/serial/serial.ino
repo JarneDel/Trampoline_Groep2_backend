@@ -8,7 +8,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-  sprintf(buf, "Hello World: %d", i++); 
+  sprintf(buf, "Hello World device 2: %d", i++); 
   Serial.println(buf);
   delay(100);
 }
