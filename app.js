@@ -7,7 +7,7 @@ import {SerialSocket} from './bin/ESP32.js';
 import dotenv from 'dotenv';
 import {getKinectConnection} from "./bin/kinect.js";
 import fs from 'fs';
-import {WebSocketServer } from 'ws'
+import {WebSocketServer} from 'ws'
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ let connectionCount = 0;
 wss.on("connection", (socket) => {
     console.log("Connection established");
     connectionCount += 1;
-    if(connectionCount > 1){
+    if (connectionCount > 1) {
 
     }
     const parser = SerialSocket(socket, process.env.ESP1_PORT, process.env.ESP1_BAUD);
@@ -40,10 +40,12 @@ wss.on("connection", (socket) => {
     const kinect = getKinectConnection();
     socket.on('close', async () => {
         await kinect.close();
-        connectionCount -=1;
+        connectionCount -= 1;
 
     })
     kinect.on('bodyFrame', function (bodyFrame) {
+        let movingAverageList = [];
+        let average = 0;
         for (let i = 0; i < bodyFrame.bodies.length; i++) {
             if (bodyFrame.bodies[i].tracked) {
                 if (this.colorYmin === undefined) {
@@ -64,6 +66,23 @@ wss.on("connection", (socket) => {
                 console.log(this)
                 console.log(msg);
                 socket.send(JSON.stringify({kinect: msg}));
+
+                if (movingAverageList.length < 1000) {
+                    movingAverageList.push(spineShoulder.colorYmin)
+                } else {
+                    movingAverageList.shift().push(spineShoulder.colorYmin);
+                }
+                average = Math.mean(movingAverageList)
+                if ( spineShoulder.colorY < average * .8){
+                    console.log("SPRINGEN JONGEN")
+                    socket.send(JSON.stringify({kinectJump: spineShoulder}))
+                }
+                if (spineShoulder.colorY > average * 1.2 ){
+                    console.log("BUKKEN JONGEN?");
+                    socket.send(JSON.stringify({kinectBuk: spineShoulder}))
+                }
+
+
                 fs.appendFile('kinect.txt', `${spineShoulder.colorX}, ${spineShoulder.colorY}\n`, err => {
                     console.log(err);
                 });
