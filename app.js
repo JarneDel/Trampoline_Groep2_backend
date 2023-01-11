@@ -29,11 +29,17 @@ wss.on("connection", (socket) => {
     const parser = SerialSocket(socket, process.env.ESP1_PORT, process.env.ESP1_BAUD);
     parser.on('data', function (data) {
         console.log('Data:', data);
+        fs.appendFile('log/esp1.txt', JSON.stringify(data), (e)=>{
+            console.warn(e)
+        })
         socket.send(JSON.stringify({data: data}));
     });
     const parser2 = SerialSocket(socket, process.env.ESP2_PORT, process.env.ESP2_BAUD);
     parser2.on('data', function (data) {
         console.log('Data2:', data);
+        fs.appendFile('log/esp2.txt', JSON.stringify(data), (e)=>{
+            console.warn(e)
+        })
         socket.send(JSON.stringify({data2: data}));
     });
 
@@ -61,10 +67,8 @@ wss.on("connection", (socket) => {
                 const diff = this.prevColorY - spineShoulder.colorY;
                 this.prevColorY = spineShoulder.colorY;
                 let msg = {min: this.colorYmin, max: this.colorYmax, diff: diff, shoulder: spineShoulder,};
-                console.log(this)
-                console.log(msg);
                 socket.send(JSON.stringify({kinect: msg}));
-                fs.appendFile('kinect.txt', `${spineShoulder.colorX}, ${spineShoulder.colorY}\n`, err => {
+                fs.appendFile(`log/body${i}.csv`, `${spineShoulder.cameraX}, ${spineShoulder.cameraY}, ${spineShoulder.cameraZ},${spineShoulder.colorX}, ${spineShoulder.colorY}, ${spineShoulder.depthX}, ${spineShoulder.depthY}\n`, err => {
                     console.log(err);
                 });
             }
