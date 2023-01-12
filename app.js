@@ -3,7 +3,7 @@ import {createServer} from "http";
 import {normalizePort, onError, onListening} from './bin/serverconfig.js';
 import logger from 'morgan'
 import createError from 'http-errors';
-import {handleDataBtn, SerialSocket} from './bin/ESP32.js';
+import {handleData, SerialSocket} from './bin/ESP32.js';
 import dotenv from 'dotenv';
 import {getKinectConnection} from "./bin/kinect.js";
 import fs from 'fs';
@@ -30,18 +30,18 @@ wss.on("connection", (socket) => {
     }
     const parser = SerialSocket(socket, process.env.ESP1_PORT, process.env.ESP1_BAUD);
     parser.on('data', function (raw) {
-        handleDataBtn(raw, 0, socket)
+        handleData(raw, 0, socket)
 
 
     });
     const parser2 = SerialSocket(socket, process.env.ESP2_PORT, process.env.ESP2_BAUD);
     parser2.on('data', function (data) {
-        handleDataBtn(data, 1, socket)
+        handleData(data, 1, socket)
     });
 
     let movingAverageList = [];
-    let jumpList = [];
-    let jumpMaxList = [];
+    let jumpList = [[],[],[],[],[],[]];
+    let jumpMaxList = [[],[],[],[],[],[]];
     let isJumping = false;
     let mean = 0;
     const kinect = getKinectConnection();
@@ -82,16 +82,16 @@ wss.on("connection", (socket) => {
                 if ( y > mean * (1 + sensitivityKinectJump) ){
                     isJumping = true;
                     console.warn("moving up")
-                    jumpList.push(y)
+                    jumpList[i].push(y)
 
                 }
                 else if (isJumping && y < mean * ( 1 + sensitivityKinectJump / .7)){
-                    jumpMaxList.push(Math.max(...jumpList));
+                    jumpMaxList[i].push(Math.max(...jumpList[i]));
                     socket.send(JSON.stringify({
-                        jump: Math.max(...jumpList),
+                        jump: Math.max(...jumpList[i]),
                         player: i
                     }));
-                    jumpList = [];
+                    jumpList[i] = [];
                     isJumping = false;
                 }
                 fs.appendFile(`log/body${i}.csv`, `${spineShoulder.cameraX}, ${y}, ${spineShoulder.cameraZ},${spineShoulder.colorX}, ${spineShoulder.colorY}, ${spineShoulder.depthX}, ${spineShoulder.depthY}\n`, err => {
