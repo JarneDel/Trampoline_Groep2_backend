@@ -47,9 +47,9 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
 
 export const handleDataBtn = function (raw, index, socket){
     let data = JSON.parse(raw)
-
-    if(data.keys[0] === 'ButtonState'){
-        let btnState = updateBtn(0, data.button)
+    if(data.ButtonState){
+        let btnState = updateBtn(index, data.ButtonState)
+        console.log(btnState)
         if (btnState !== null){
             socket.send(JSON.stringify(btnState))
         }

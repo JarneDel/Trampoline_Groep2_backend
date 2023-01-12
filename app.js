@@ -23,7 +23,6 @@ let connectionCount = 0;
 
 
 wss.on("connection", (socket) => {
-    export const webSocket = socket;
     console.log("Connection established");
     connectionCount += 1;
     if (connectionCount > 1) {

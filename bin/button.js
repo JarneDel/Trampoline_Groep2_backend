@@ -1,6 +1,6 @@
 let buttonState = {
-    btn1: false,
-    btn2: false,
+    0: false,
+    1: false,
 }
 
 export function updateBtn(btnNumber, value) {
