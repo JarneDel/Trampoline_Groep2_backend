@@ -9,6 +9,7 @@ import {getKinectConnection} from "./bin/kinect.js";
 import fs from 'fs';
 import {WebSocketServer} from 'ws'
 import {sensitivityKinectJump} from "./config.js";
+import {isJumping} from "./Globals.js";
 
 dotenv.config();
 
@@ -42,7 +43,6 @@ wss.on("connection", (socket) => {
     let movingAverageList = [];
     let jumpList = [[],[],[],[],[],[]];
     let jumpMaxList = [[],[],[],[],[],[]];
-    let isJumping = false;
     let mean = 0;
     const kinect = getKinectConnection();
     socket.on('close', async () => {
