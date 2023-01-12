@@ -1,5 +1,6 @@
 import {SerialPort} from 'serialport';
 import {ReadlineParser} from '@serialport/parser-readline';
+import {updateBtn} from "./button.js";
 
 const getSerialPort = function (portNumber, baudRate, socket) {
     try {
@@ -44,4 +45,13 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
 
 }
 
+export const handleDataBtn = function (raw, index, socket){
+    let data = JSON.parse(raw)
 
+    if(data.keys[0] === 'ButtonState'){
+        let btnState = updateBtn(0, data.button)
+        if (btnState !== null){
+            socket.send(JSON.stringify(btnState))
+        }
+    }
+}

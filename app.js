@@ -3,7 +3,7 @@ import {createServer} from "http";
 import {normalizePort, onError, onListening} from './bin/serverconfig.js';
 import logger from 'morgan'
 import createError from 'http-errors';
-import {SerialSocket} from './bin/ESP32.js';
+import {handleDataBtn, SerialSocket} from './bin/ESP32.js';
 import dotenv from 'dotenv';
 import {getKinectConnection} from "./bin/kinect.js";
 import fs from 'fs';
@@ -23,20 +23,21 @@ let connectionCount = 0;
 
 
 wss.on("connection", (socket) => {
+    export const webSocket = socket;
     console.log("Connection established");
     connectionCount += 1;
     if (connectionCount > 1) {
 
     }
     const parser = SerialSocket(socket, process.env.ESP1_PORT, process.env.ESP1_BAUD);
-    parser.on('data', function (data) {
-        // console.log('Data:', data);
-        // socket.send(JSON.stringify({data: data}));
+    parser.on('data', function (raw) {
+        handleDataBtn(raw, 0, socket)
+
+
     });
     const parser2 = SerialSocket(socket, process.env.ESP2_PORT, process.env.ESP2_BAUD);
     parser2.on('data', function (data) {
-        // console.log('Data2:', data);
-        // socket.send(JSON.stringify({data2: data}));
+        handleDataBtn(data, 1, socket)
     });
 
     let movingAverageList = [];
