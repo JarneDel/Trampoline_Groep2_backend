@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import {getKinectConnection} from "./bin/kinect.js";
 import fs from 'fs';
 import {WebSocketServer} from 'ws'
+import {sensitivityKinectJump} from "./config.js";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ export const wss = new WebSocketServer({server: httpServer});
 
 let connectionCount = 0;
 
+
 wss.on("connection", (socket) => {
     console.log("Connection established");
     connectionCount += 1;
@@ -28,62 +30,71 @@ wss.on("connection", (socket) => {
     }
     const parser = SerialSocket(socket, process.env.ESP1_PORT, process.env.ESP1_BAUD);
     parser.on('data', function (data) {
-        console.log('Data:', data);
-        socket.send(JSON.stringify({data: data}));
+        // console.log('Data:', data);
+        // socket.send(JSON.stringify({data: data}));
     });
     const parser2 = SerialSocket(socket, process.env.ESP2_PORT, process.env.ESP2_BAUD);
     parser2.on('data', function (data) {
-        console.log('Data2:', data);
-        socket.send(JSON.stringify({data2: data}));
+        // console.log('Data2:', data);
+        // socket.send(JSON.stringify({data2: data}));
     });
 
+    let movingAverageList = [];
+    let jumpList = [];
+    let jumpMaxList = [];
+    let isJumping = false;
+    let mean = 0;
     const kinect = getKinectConnection();
     socket.on('close', async () => {
         await kinect.close();
         connectionCount -= 1;
+        console.log(jumpMaxList);
+    });
 
-    })
     kinect.on('bodyFrame', function (bodyFrame) {
-        let movingAverageList = [];
-        let average = 0;
         for (let i = 0; i < bodyFrame.bodies.length; i++) {
             if (bodyFrame.bodies[i].tracked) {
-                if (this.colorYmin === undefined) {
-                    this.colorYmin = bodyFrame.bodies[i].joints[0].colorY;
-                    this.colorYmax = bodyFrame.bodies[i].joints[0].colorY;
+                let y = bodyFrame.bodies[i].joints[0].cameraY + 1;
+                if (this.cameraYmin === undefined) {
+                    this.cameraYmin = y
+                    this.cameraYmax = y
                 }
                 const spineShoulder = bodyFrame.bodies[i].joints[0];
                 // console.log(spineShoulder);
-                if (spineShoulder.colorY < this.colorYmin) {
-                    this.colorYmin = spineShoulder.colorY
-                }
-                if (spineShoulder.colorY > this.colorYmax) {
-                    this.colorYmax = spineShoulder.colorY
-                }
-                const diff = this.prevColorY - spineShoulder.colorY;
-                this.prevColorY = spineShoulder.colorY;
-                let msg = {min: this.colorYmin, max: this.colorYmax, diff: diff, shoulder: spineShoulder,};
-                console.log(this)
-                console.log(msg);
-                socket.send(JSON.stringify({kinect: msg}));
+                if (y < this.cameraYmin) this.cameraYmin = y;
+                if (spineShoulder.cameraY > this.cameraYmax) this.cameraYmax = spineShoulder.cameraY;
 
-                if (movingAverageList.length < 1000) {
-                    movingAverageList.push(spineShoulder.colorYmin)
+                if (movingAverageList.length < 500) {
+                    movingAverageList.push(y)
+                    console.log("add")
+
                 } else {
-                    movingAverageList.shift().push(spineShoulder.colorYmin);
+                    movingAverageList.shift()
+                    movingAverageList.push(y);
+                    console.log('remove')
                 }
-                average = Math.mean(movingAverageList)
-                if ( spineShoulder.colorY < average * .8){
-                    console.log("SPRINGEN JONGEN")
-                    socket.send(JSON.stringify({kinectJump: spineShoulder}))
+                mean = movingAverageList.reduce((a, b) => a + b) / movingAverageList.length;
+                console.log(mean, "gemiddelde, len", movingAverageList.length)
+                if ( y < mean * (1 - sensitivityKinectJump)){
+                    console.log("Moving down")
+                    // socket.send(JSON.stringify("kinectDown"))
                 }
-                if (spineShoulder.colorY > average * 1.2 ){
-                    console.log("BUKKEN JONGEN?");
-                    socket.send(JSON.stringify({kinectBuk: spineShoulder}))
-                }
+                if ( y > mean * (1 + sensitivityKinectJump) ){
+                    isJumping = true;
+                    console.warn("moving up")
+                    jumpList.push(y)
 
-
-                fs.appendFile('kinect.txt', `${spineShoulder.colorX}, ${spineShoulder.colorY}\n`, err => {
+                }
+                else if (isJumping && y < mean * ( 1 + sensitivityKinectJump / .7)){
+                    jumpMaxList.push(Math.max(...jumpList));
+                    socket.send(JSON.stringify({
+                        jump: Math.max(...jumpList),
+                        player: i
+                    }));
+                    jumpList = [];
+                    isJumping = false;
+                }
+                fs.appendFile(`log/body${i}.csv`, `${spineShoulder.cameraX}, ${y}, ${spineShoulder.cameraZ},${spineShoulder.colorX}, ${spineShoulder.colorY}, ${spineShoulder.depthX}, ${spineShoulder.depthY}\n`, err => {
                     console.log(err);
                 });
             }
