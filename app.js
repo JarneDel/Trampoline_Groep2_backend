@@ -9,7 +9,8 @@ import {getKinectConnection} from "./bin/kinect.js";
 import fs from 'fs';
 import {WebSocketServer} from 'ws'
 import {sensitivityKinectJump} from "./config.js";
-import {isJumping} from "./Globals.js";
+import Kinect2 from "kinect2";
+
 
 dotenv.config();
 
@@ -40,10 +41,13 @@ wss.on("connection", (socket) => {
         handleData(data, 1, socket)
     });
 
-    let movingAverageList = [];
+    let movingAverageList = [[],[],[],[],[],[]];
     let jumpList = [[],[],[],[],[],[]];
     let jumpMaxList = [[],[],[],[],[],[]];
-    let mean = 0;
+    let isJumpingList = [false, false, false, false, false, false];
+    let jumpLength = []
+    let OnlyOneStart = [0,0,0,0,0,0]
+    let mean = [0,0,0,0,0,0]
     const kinect = getKinectConnection();
     socket.on('close', async () => {
         await kinect.close();
@@ -51,51 +55,61 @@ wss.on("connection", (socket) => {
         console.log(jumpMaxList);
     });
 
+
     kinect.on('bodyFrame', function (bodyFrame) {
+
         for (let i = 0; i < bodyFrame.bodies.length; i++) {
             if (bodyFrame.bodies[i].tracked) {
-                let y = bodyFrame.bodies[i].joints[0].cameraY + 1;
-                if (this.cameraYmin === undefined) {
-                    this.cameraYmin = y
-                    this.cameraYmax = y
-                }
-                const spineShoulder = bodyFrame.bodies[i].joints[0];
-                // console.log(spineShoulder);
-                if (y < this.cameraYmin) this.cameraYmin = y;
-                if (spineShoulder.cameraY > this.cameraYmax) this.cameraYmax = spineShoulder.cameraY;
+                console.log('new bodyframe')
+                const y = bodyFrame.bodies[i].joints[Kinect2.JointType.spineBase].cameraY + 1;
+                const joint = bodyFrame.bodies[i].joints[Kinect2.JointType.spineBase];
 
-                if (movingAverageList.length < 500) {
-                    movingAverageList.push(y)
-                    console.log("add")
+                if (movingAverageList[i].length < 500) {
+                    movingAverageList[i].push(y)
 
                 } else {
-                    movingAverageList.shift()
-                    movingAverageList.push(y);
-                    console.log('remove')
+                    movingAverageList[i].shift()
+                    movingAverageList[i].push(y);
                 }
-                mean = movingAverageList.reduce((a, b) => a + b) / movingAverageList.length;
-                console.log(mean, "gemiddelde, len", movingAverageList.length)
-                if ( y < mean * (1 - sensitivityKinectJump)){
-                    console.log("Moving down")
-                    // socket.send(JSON.stringify("kinectDown"))
-                }
-                if ( y > mean * (1 + sensitivityKinectJump) ){
-                    isJumping = true;
-                    console.warn("moving up")
+                mean[i] = movingAverageList[i].reduce((a, b) => a + b) / movingAverageList[i].length;
+
+
+                if ( y > mean[i] * (1 + sensitivityKinectJump) ){
+                    isJumpingList[i] = true;
+                    console.info("moving up")
                     jumpList[i].push(y)
 
                 }
-                else if (isJumping && y < mean * ( 1 + sensitivityKinectJump / .7)){
+                else if (isJumpingList[i] && y < mean[i] * ( 1 + sensitivityKinectJump / .7)){
+                    console.warn("jump detected: player", i)
                     jumpMaxList[i].push(Math.max(...jumpList[i]));
                     socket.send(JSON.stringify({
                         jump: Math.max(...jumpList[i]),
                         player: i
                     }));
                     jumpList[i] = [];
-                    isJumping = false;
+                    isJumpingList[i] = false;
+                    OnlyOneStart[i] = false;
+                    jumpLength[i] = undefined
                 }
-                fs.appendFile(`log/body${i}.csv`, `${spineShoulder.cameraX}, ${y}, ${spineShoulder.cameraZ},${spineShoulder.colorX}, ${spineShoulder.colorY}, ${spineShoulder.depthX}, ${spineShoulder.depthY}\n`, err => {
-                    console.log(err);
+                if (!OnlyOneStart[i] && isJumpingList[i]) {
+                    console.log("jump started player", i);
+                    socket.send(JSON.stringify({isJumping: {
+                            index: i,
+                            status: 'start'
+                        }}))
+                    jumpLength[i] = new Date();
+                    OnlyOneStart[i] = true;
+                }
+                if (jumpLength[i] && new Date() - jumpLength[i] > 5000){
+                    console.log("jump timed out");
+                    jumpList[i] = [];
+                    isJumpingList[i] = false;
+                    OnlyOneStart[i] = false;
+                    jumpLength[i] = undefined
+                }
+                fs.appendFile(`log/body${i}.csv`, `${joint.cameraX}, ${y}, ${joint.cameraZ},${joint.colorX}, ${joint.colorY}, ${joint.depthX}, ${joint.depthY}, ${mean[i]}\n`, () => {
+
                 });
             }
         }
