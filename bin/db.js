@@ -1,23 +1,19 @@
-import * as mysql from 'mysql'
+import * as mysql from 'mysql2'
 import dotenv from 'dotenv'
 dotenv.config()
-
-export const sqlConnection = mysql.createConnection({
+const password = process.env.SQL_PASSWORD
+const config = {
     host: "localhost",
     user: "root",
-    database: 'database',
-    password: process.env.SQL_PASSWORD
-});
+    password: password,
+    database: 'database'
+};
 
-sqlConnection.connect(function(err) {
-    if (err) throw err;
-    console.log("Connected!");
-});
-
-export function sqlRequest(userId){
-    sqlConnection.query('SELECT * FROM statistics WHERE id = ?', [userId], function (error, results, fields) {
-        if (error) throw error;
-        console.log(results);
-        // ...
-    });
+export async function example1 () {
+    const conn = mysql.createPool(config);
+    const pool = conn.promise();
+    let [rows, fields] = await pool.query('SELECT * FROM statistics');
+    console.log(rows)
+    return rows
 }
+example1()
