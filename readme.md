@@ -10,9 +10,15 @@ player2 pressed
 `{btn: 'p2'}`
 
 ### kinect
-```js
+```json
 {
-  "jump": float   // coordinate of highest point
-  "player": int   // player index
+  "jump": "float",   // coordinate of highest point
+  "player": "int"   // player index
 }
 ```
+
+### Username Generation
+URL: `http://localhost:3000/username`    
+Content-type: application/json  
+response-example: `"LonelyHat"`  
+

@@ -10,6 +10,7 @@ import fs from 'fs';
 import {WebSocketServer} from 'ws'
 import {sensitivityKinectJump} from "./config.js";
 import Kinect2 from "kinect2";
+import userNames from "./routes/userNames.js";
 
 
 dotenv.config();
@@ -126,6 +127,7 @@ app.get('/', (req, res) => {
     res.json('Hello World!');
 });
 
+app.use('/username', userNames)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
