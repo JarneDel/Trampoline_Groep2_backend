@@ -1,4 +1,5 @@
 import express from "express";
+
 import {createServer} from "http";
 import {normalizePort, onError, onListening} from './bin/serverconfig.js';
 import logger from 'morgan'
@@ -12,20 +13,20 @@ import {sensitivityKinectJump} from "./config.js";
 import Kinect2 from "kinect2";
 import userNames from "./routes/userNames.js";
 
-
 dotenv.config();
 
 export const app = express();
-export const port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
+export const port = normalizePort(process.env.PORT || "3000");
+app.set("port", port);
 export const httpServer = createServer(app);
 // add normal websocket support
-export const wss = new WebSocketServer({server: httpServer});
+export const wss = new WebSocketServer({ server: httpServer });
 
 let connectionCount = 0;
 
 
 wss.on("connection", (socket) => {
+
     console.log("Connection established");
     connectionCount += 1;
     if (connectionCount > 1) {
@@ -113,38 +114,51 @@ wss.on("connection", (socket) => {
 
                 });
             }
+
         }
-    });
+        const diff = this.prevColorY - spineShoulder.colorY;
+        this.prevColorY = spineShoulder.colorY;
+        let msg = { min: this.colorYmin, max: this.colorYmax, diff: diff, shoulder: spineShoulder };
+        console.log(this);
+        console.log(msg);
+        socket.send(JSON.stringify({ kinect: msg }));
+        fs.appendFile("kinect.txt", `${spineShoulder.colorX}, ${spineShoulder.colorY}\n`, (err) => {
+          console.log(err);
+        });
+      }
+    }
+  });
 });
 
-
-app.use(logger('dev'));
+app.use(logger("dev"));
 app.use(express.json());
-app.use(express.urlencoded({extended: false}));
+app.use(express.urlencoded({ extended: false }));
 
-
-app.get('/', (req, res) => {
-    res.json('Hello World!');
+app.get("/", (req, res) => {
+  res.json("Hello World!");
 });
+
 
 app.use('/username', userNames)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-    next(createError(404));
+  next(createError(404));
 });
 
 // error handler
 app.use(function (err, req, res) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
 
-    // render the error page
-    res.status(err.status || 500);
-    res.render('error');
+  // render the error page
+  res.status(err.status || 500);
+  res.render("error");
 });
 
+await postResults("test3", 100);
+
 httpServer.listen(3000);
-httpServer.on('error', onError);
-httpServer.on('listening', onListening);
+httpServer.on("error", onError);
+httpServer.on("listening", onListening);

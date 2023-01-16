@@ -13,6 +13,7 @@
     "http-errors": "^2.0.0",
     "kinect2": "^0.2.3",
     "morgan": "~1.9.1",
+    "mysql2": "^3.0.1",
     "serialport": "^10.5.0",
     "unique-names-generator": "^4.7.1",
     "ws": "^8.12.0"
