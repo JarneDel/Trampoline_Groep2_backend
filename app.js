@@ -12,6 +12,7 @@ import {WebSocketServer} from 'ws'
 import {sensitivityKinectJump} from "./config.js";
 import Kinect2 from "kinect2";
 import userNames from "./routes/userNames.js";
+import database from "./routes/database.js";
 
 dotenv.config();
 
@@ -139,7 +140,7 @@ app.get("/", (req, res) => {
 });
 
 app.use('/username', userNames)
-
+app.use('/scoreboard', database)
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
     next(createError(404));
