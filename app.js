@@ -20,7 +20,7 @@ export const port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
 export const httpServer = createServer(app);
 // add normal websocket support
-export const wss = new WebSocketServer({ server: httpServer });
+export const wss = new WebSocketServer({server: httpServer});
 
 let connectionCount = 0;
 
@@ -43,13 +43,13 @@ wss.on("connection", (socket) => {
         handleData(data, 1, socket)
     });
 
-    let movingAverageList = [[],[],[],[],[],[]];
-    let jumpList = [[],[],[],[],[],[]];
-    let jumpMaxList = [[],[],[],[],[],[]];
+    let movingAverageList = [[], [], [], [], [], []];
+    let jumpList = [[], [], [], [], [], []];
+    let jumpMaxList = [[], [], [], [], [], []];
     let isJumpingList = [false, false, false, false, false, false];
     let jumpLength = []
-    let OnlyOneStart = [0,0,0,0,0,0]
-    let mean = [0,0,0,0,0,0]
+    let OnlyOneStart = [0, 0, 0, 0, 0, 0]
+    let mean = [0, 0, 0, 0, 0, 0]
     const kinect = getKinectConnection();
     socket.on('close', async () => {
         await kinect.close();
@@ -76,13 +76,12 @@ wss.on("connection", (socket) => {
                 mean[i] = movingAverageList[i].reduce((a, b) => a + b) / movingAverageList[i].length;
 
 
-                if ( y > mean[i] * (1 + sensitivityKinectJump) ){
+                if (y > mean[i] * (1 + sensitivityKinectJump)) {
                     isJumpingList[i] = true;
                     console.info("moving up")
                     jumpList[i].push(y)
 
-                }
-                else if (isJumpingList[i] && y < mean[i] * ( 1 + sensitivityKinectJump / .7)){
+                } else if (isJumpingList[i] && y < mean[i] * (1 + sensitivityKinectJump / .7)) {
                     console.warn("jump detected: player", i)
                     jumpMaxList[i].push(Math.max(...jumpList[i]));
                     socket.send(JSON.stringify({
@@ -96,14 +95,16 @@ wss.on("connection", (socket) => {
                 }
                 if (!OnlyOneStart[i] && isJumpingList[i]) {
                     console.log("jump started player", i);
-                    socket.send(JSON.stringify({isJumping: {
+                    socket.send(JSON.stringify({
+                        isJumping: {
                             index: i,
                             status: 'start'
-                        }}))
+                        }
+                    }))
                     jumpLength[i] = new Date();
                     OnlyOneStart[i] = true;
                 }
-                if (jumpLength[i] && new Date() - jumpLength[i] > 5000){
+                if (jumpLength[i] && new Date() - jumpLength[i] > 5000) {
                     console.log("jump timed out");
                     jumpList[i] = [];
                     isJumpingList[i] = false;
@@ -118,46 +119,42 @@ wss.on("connection", (socket) => {
         }
         const diff = this.prevColorY - spineShoulder.colorY;
         this.prevColorY = spineShoulder.colorY;
-        let msg = { min: this.colorYmin, max: this.colorYmax, diff: diff, shoulder: spineShoulder };
+        let msg = {min: this.colorYmin, max: this.colorYmax, diff: diff, shoulder: spineShoulder};
         console.log(this);
         console.log(msg);
-        socket.send(JSON.stringify({ kinect: msg }));
+        socket.send(JSON.stringify({kinect: msg}));
         fs.appendFile("kinect.txt", `${spineShoulder.colorX}, ${spineShoulder.colorY}\n`, (err) => {
-          console.log(err);
+            console.log(err);
         });
-      }
-    }
-  });
+    });
 });
+
 
 app.use(logger("dev"));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: false}));
 
 app.get("/", (req, res) => {
-  res.json("Hello World!");
+    res.json("Hello World!");
 });
-
 
 app.use('/username', userNames)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+    next(createError(404));
 });
 
 // error handler
 app.use(function (err, req, res) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get("env") === "development" ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
+    // render the error page
+    res.status(err.status || 500);
+    res.render("error");
 });
-
-await postResults("test3", 100);
 
 httpServer.listen(3000);
 httpServer.on("error", onError);
