@@ -1,9 +1,6 @@
 import {SerialPort} from 'serialport';
 import {ReadlineParser} from '@serialport/parser-readline';
 import {updateBtn} from "./button.js";
-import {MaxJumpForce} from "../config.js";
-import {isJumping, MPU_Since_last_jump} from "../Globals.js";
-
 const getSerialPort = function (portNumber, baudRate, socket) {
     try {
         baudRate = Number(baudRate) || 115200;
@@ -49,27 +46,12 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
 
 export const handleData = function (raw, index, socket){
     let data = JSON.parse(raw)
-    if(data.ButtonState !== undefined){
+    if(data.ButtonState !== undefined) {
         let btnState = updateBtn(index, data.ButtonState)
-        console.log(btnState)
-        if (btnState !== null){
-            socket.send(JSON.stringify(btnState))
+        if (btnState !== undefined) {
+            console.log("sending button state: ", btnState, "\tButton value is ", data.ButtonState)
+            socket.send(JSON.stringify({button: btnState}))
         }
-    }
-    if(data.JumpForce !== undefined){
-        let jumpForce = MaxJumpForce - data.JumpForce;
-        if(isJumping){
-            MPU_Since_last_jump.push({
-                force: jumpForce,
-                timestamp: new Date()
-            })
-        }
-        else if (MPU_Since_last_jump.length > 0){
-            const max = Math.max(...MPU_Since_last_jump);
-            MPU_Since_last_jump = [];
-            socket.send(JSON.stringify({accel: max}))
-        }
-        socket.send(JSON.stringify(jumpForce))
     }
 
 }
