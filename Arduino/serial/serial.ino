@@ -1,4 +1,5 @@
 int knop = 14;
+
 bool btnState = 0;
 bool btnUpdated = 0;
 
@@ -13,7 +14,6 @@ void loop()
 {
     btnState = !digitalRead(knop);
     checkBtnState(); // display the button state
-
 }
 
 void checkBtnState(void)
@@ -36,3 +36,4 @@ void btnChange()
   }
   last_interrupt_time = interrupt_time;
 }
+
