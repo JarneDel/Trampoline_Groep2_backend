@@ -6,7 +6,7 @@ import logger from 'morgan'
 import createError from 'http-errors';
 import {handleData, SerialSocket} from './bin/ESP32.js';
 import dotenv from 'dotenv';
-import {getKinectConnection} from "./bin/kinect.js";
+import {getKinectConnection, getMaxPercentage} from "./bin/kinect.js";
 import fs from 'fs';
 import {WebSocketServer} from 'ws'
 import {sensitivityKinectJump} from "./config.js";
@@ -44,13 +44,10 @@ wss.on("connection", (socket) => {
         handleData(data, 1, socket)
     });
 
-    let movingAverageList = [[], [], [], [], [], []];
-    let jumpList = [[], [], [], [], [], []];
-    let jumpMaxList = [[], [], [], [], [], []];
-    let isJumpingList = [false, false, false, false, false, false];
-    let jumpLength = []
-    let OnlyOneStart = [0, 0, 0, 0, 0, 0]
-    let mean = [0, 0, 0, 0, 0, 0]
+    let movingAverageList, jumpList, jumpMaxList = [[], [], [], [], [], []];
+    let isJumpingList, jumpLength = []
+    let OnlyOneStart, mean = [0, 0, 0, 0, 0, 0]
+
     const kinect = getKinectConnection();
     socket.on('close', async () => {
         await kinect.close();
@@ -85,9 +82,14 @@ wss.on("connection", (socket) => {
                 } else if (isJumpingList[i] && y < mean[i] * (1 + sensitivityKinectJump / .7)) {
                     console.warn("jump detected: player", i)
                     jumpMaxList[i].push(Math.max(...jumpList[i]));
+                    let {value, max, min} = getMaxPercentage(Math.max(...jumpList[i]), minJumpStrength[i], maxJumpStrength[i])
+                    minJumpStrength[i] = min;
+                    maxJumpStrength[i] = max;
                     socket.send(JSON.stringify({
-                        jump: Math.max(...jumpList[i]),
-                        player: i
+                        jump: {
+                            force: 'value',
+                            player: i
+                        }
                     }));
                     jumpList[i] = [];
                     isJumpingList[i] = false;
@@ -118,15 +120,7 @@ wss.on("connection", (socket) => {
             }
 
         }
-        const diff = this.prevColorY - spineShoulder.colorY;
-        this.prevColorY = spineShoulder.colorY;
-        let msg = {min: this.colorYmin, max: this.colorYmax, diff: diff, shoulder: spineShoulder};
-        console.log(this);
-        console.log(msg);
-        socket.send(JSON.stringify({kinect: msg}));
-        fs.appendFile("kinect.txt", `${spineShoulder.colorX}, ${spineShoulder.colorY}\n`, (err) => {
-            console.log(err);
-        });
+
     });
 });
 
