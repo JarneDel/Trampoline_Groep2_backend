@@ -19,3 +19,5 @@ export function getKinectData(kinect){
 export function closeKinectConnection(kinect){
     kinect.close();
 }
+
+

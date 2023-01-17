@@ -12,7 +12,7 @@ player2 pressed
 ### kinect
 ```json
 {
-  "jump": "float",   // coordinate of highest point
+  "jump": "float",   // coordinat   e of highest point
   "player": "int"   // player index
 }
 ```
@@ -22,3 +22,7 @@ URL: `http://localhost:3000/username`
 Content-type: application/json  
 response-example: `"LonelyHat"`  
 
+### avatar Generation
+URL: `http://localhost:3000/username/avatar`  
+Content-type: HTML  
+response-example: svg  

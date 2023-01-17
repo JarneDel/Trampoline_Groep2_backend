@@ -1,5 +1,5 @@
+"use strict"
 import express from "express";
-
 import {createServer} from "http";
 import {normalizePort, onError, onListening} from './bin/serverconfig.js';
 import logger from 'morgan'
@@ -44,13 +44,17 @@ wss.on("connection", (socket) => {
         handleData(data, 1, socket)
     });
 
-    let movingAverageList = [[], [], [], [], [], []];
-    let jumpList = [[], [], [], [], [], []];
+    let movingAverageList = [[], [], [], [], [], []]
+    let jumpList = [[], [], [], [], [], []]
     let jumpMaxList = [[], [], [], [], [], []];
-    let isJumpingList = [false, false, false, false, false, false];
+    let isJumpingList = [];
     let jumpLength = []
-    let OnlyOneStart = [0, 0, 0, 0, 0, 0]
+    let OnlyOneStart=[0, 0, 0, 0, 0, 0]
     let mean = [0, 0, 0, 0, 0, 0]
+
+    let highestJump = [0,0,0,0,0,0];
+    let lowestJump = [5,5,5,5,5,5]
+
     const kinect = getKinectConnection();
     socket.on('close', async () => {
         await kinect.close();
@@ -83,11 +87,18 @@ wss.on("connection", (socket) => {
                     jumpList[i].push(y)
 
                 } else if (isJumpingList[i] && y < mean[i] * (1 + sensitivityKinectJump / .7)) {
-                    console.warn("jump detected: player", i)
-                    jumpMaxList[i].push(Math.max(...jumpList[i]));
+                    console.warn("jump detected: player", i);
+                    let top = Math.max(...jumpList[i]);
+                    jumpMaxList[i].push(top);
+                    if (top > highestJump[i]) highestJump[i] = top;
+                    if (top < lowestJump[i]) lowestJump[i] = top;
+                    let jumpPercentage = ((top - lowestJump[i])) / (highestJump[i] - lowestJump[i])
+                    if (isNaN(jumpPercentage)) jumpPercentage = 1;
                     socket.send(JSON.stringify({
-                        jump: Math.max(...jumpList[i]),
-                        player: i
+                        jump: {
+                            force: jumpPercentage,
+                            player: i
+                        }
                     }));
                     jumpList[i] = [];
                     isJumpingList[i] = false;
@@ -118,15 +129,7 @@ wss.on("connection", (socket) => {
             }
 
         }
-        const diff = this.prevColorY - spineShoulder.colorY;
-        this.prevColorY = spineShoulder.colorY;
-        let msg = {min: this.colorYmin, max: this.colorYmax, diff: diff, shoulder: spineShoulder};
-        console.log(this);
-        console.log(msg);
-        socket.send(JSON.stringify({kinect: msg}));
-        fs.appendFile("kinect.txt", `${spineShoulder.colorX}, ${spineShoulder.colorY}\n`, (err) => {
-            console.log(err);
-        });
+
     });
 });
 
