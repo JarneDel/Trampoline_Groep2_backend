@@ -20,14 +20,4 @@ export function closeKinectConnection(kinect){
     kinect.close();
 }
 
-export function getMaxPercentage(val, min, max){
-    if (val > max) max = val;
-    if (val < min) min =val;
-    let value = ((val - min)) / (max - min)
-    return {
-        value: value,
-        max: max,
-        min: min,
-    }
-}
 

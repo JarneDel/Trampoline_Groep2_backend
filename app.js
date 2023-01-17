@@ -1,12 +1,12 @@
+"use strict"
 import express from "express";
-
 import {createServer} from "http";
 import {normalizePort, onError, onListening} from './bin/serverconfig.js';
 import logger from 'morgan'
 import createError from 'http-errors';
 import {handleData, SerialSocket} from './bin/ESP32.js';
 import dotenv from 'dotenv';
-import {getKinectConnection, getMaxPercentage} from "./bin/kinect.js";
+import {getKinectConnection} from "./bin/kinect.js";
 import fs from 'fs';
 import {WebSocketServer} from 'ws'
 import {sensitivityKinectJump} from "./config.js";
@@ -44,9 +44,16 @@ wss.on("connection", (socket) => {
         handleData(data, 1, socket)
     });
 
-    let movingAverageList, jumpList, jumpMaxList = [[], [], [], [], [], []];
-    let isJumpingList, jumpLength = []
-    let OnlyOneStart, mean = [0, 0, 0, 0, 0, 0]
+    let movingAverageList = [[], [], [], [], [], []]
+    let jumpList = [[], [], [], [], [], []]
+    let jumpMaxList = [[], [], [], [], [], []];
+    let isJumpingList = [];
+    let jumpLength = []
+    let OnlyOneStart=[0, 0, 0, 0, 0, 0]
+    let mean = [0, 0, 0, 0, 0, 0]
+
+    let highestJump = [0,0,0,0,0,0];
+    let lowestJump = [5,5,5,5,5,5]
 
     const kinect = getKinectConnection();
     socket.on('close', async () => {
@@ -80,14 +87,16 @@ wss.on("connection", (socket) => {
                     jumpList[i].push(y)
 
                 } else if (isJumpingList[i] && y < mean[i] * (1 + sensitivityKinectJump / .7)) {
-                    console.warn("jump detected: player", i)
-                    jumpMaxList[i].push(Math.max(...jumpList[i]));
-                    let {value, max, min} = getMaxPercentage(Math.max(...jumpList[i]), minJumpStrength[i], maxJumpStrength[i])
-                    minJumpStrength[i] = min;
-                    maxJumpStrength[i] = max;
+                    console.warn("jump detected: player", i);
+                    let top = Math.max(...jumpList[i]);
+                    jumpMaxList[i].push(top);
+                    if (top > highestJump[i]) highestJump[i] = top;
+                    if (top < lowestJump[i]) lowestJump[i] = top;
+                    let jumpPercentage = ((top - lowestJump[i])) / (highestJump[i] - lowestJump[i])
+                    if (isNaN(jumpPercentage)) jumpPercentage = 1;
                     socket.send(JSON.stringify({
                         jump: {
-                            force: 'value',
+                            force: jumpPercentage,
                             player: i
                         }
                     }));
