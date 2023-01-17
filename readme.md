@@ -17,6 +17,22 @@ player2 pressed
 }
 ```
 
+#### send calibration events
+```js
+calibration: {
+    "status": "calibrating" | "finished",
+    "player": "p1" | "p2"
+}
+```
+
+end of calibration
+```js
+calibrationSuccess: {
+    "indices": [i1, i2]
+}
+```
+
+
 ### Username Generation
 URL: `http://localhost:3000/username`    
 Content-type: application/json  
@@ -26,3 +42,5 @@ response-example: `"LonelyHat"`
 URL: `http://localhost:3000/username/avatar`  
 Content-type: HTML  
 response-example: svg  
+
+

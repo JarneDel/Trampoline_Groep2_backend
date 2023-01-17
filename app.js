@@ -14,6 +14,7 @@ import Kinect2 from "kinect2";
 import userNames from "./routes/userNames.js";
 import database from "./routes/database.js";
 
+// region server
 dotenv.config();
 
 export const app = express();
@@ -22,90 +23,116 @@ app.set("port", port);
 export const httpServer = createServer(app);
 // add normal websocket support
 export const wss = new WebSocketServer({server: httpServer});
-
-let connectionCount = 0;
-
+//endregion
 
 wss.on("connection", (socket) => {
-
     console.log("Connection established");
-    connectionCount += 1;
-    if (connectionCount > 1) {
-
-    }
-    const parser = SerialSocket(socket, process.env.ESP1_PORT, process.env.ESP1_BAUD);
-    parser.on('data', function (raw) {
-        handleData(raw, 0, socket)
-
-
-    });
-    const parser2 = SerialSocket(socket, process.env.ESP2_PORT, process.env.ESP2_BAUD);
-    parser2.on('data', function (data) {
-        handleData(data, 1, socket)
-    });
-
+    // region state-management
+    let isCalibrating = false;
+    let calibratingPlayer = -1;
+    let calibratedIndices = []
     let movingAverageList = [[], [], [], [], [], []]
     let jumpList = [[], [], [], [], [], []]
     let jumpMaxList = [[], [], [], [], [], []];
     let isJumpingList = [];
     let jumpLength = []
-    let OnlyOneStart=[0, 0, 0, 0, 0, 0]
+    let OnlyOneStart = [0, 0, 0, 0, 0, 0]
     let mean = [0, 0, 0, 0, 0, 0]
+    let highestJump = [0, 0, 0, 0, 0, 0];
+    let lowestJump = [5, 5, 5, 5, 5, 5]
 
-    let highestJump = [0,0,0,0,0,0];
-    let lowestJump = [5,5,5,5,5,5]
+    // endregion
+    // region esp32
+    const parser = SerialSocket(socket, process.env.ESP1_PORT, process.env.ESP1_BAUD);
+    parser.on('data', function (raw) {
+        handleData(raw, 0, socket)
+    });
+    const parser2 = SerialSocket(socket, process.env.ESP2_PORT, process.env.ESP2_BAUD);
+    parser2.on('data', function (data) {
+        handleData(data, 1, socket)
+    });
+    // endregion
 
     const kinect = getKinectConnection();
     socket.on('close', async () => {
         await kinect.close();
-        connectionCount -= 1;
         console.log(jumpMaxList);
     });
+    socket.on('message', (msg) => {
+        let data = JSON.parse(msg)
+        if ("calibration" in data) {
+            console.log("calibration started for player", data.calibration.player)
+            let calibration = data.calibration;
+            if (calibration.status === "calibrating") {
+                isCalibrating = true;
+                calibratingPlayer = calibration.player ? "p1" : "p2"
+            } else {
+                isCalibrating = false;
+                socket.send(JSON.stringify({
+                    calibrationSuccess: {
+                        indices: calibratedIndices
+                    }
+                }))
+            }
+        }
+    })
 
 
     kinect.on('bodyFrame', function (bodyFrame) {
 
         for (let i = 0; i < bodyFrame.bodies.length; i++) {
             if (bodyFrame.bodies[i].tracked) {
-                console.log('new bodyframe')
+                // region jumpDetection
                 const y = bodyFrame.bodies[i].joints[Kinect2.JointType.spineBase].cameraY + 1;
                 const joint = bodyFrame.bodies[i].joints[Kinect2.JointType.spineBase];
-
                 if (movingAverageList[i].length < 500) {
                     movingAverageList[i].push(y)
-
                 } else {
                     movingAverageList[i].shift()
                     movingAverageList[i].push(y);
                 }
                 mean[i] = movingAverageList[i].reduce((a, b) => a + b) / movingAverageList[i].length;
-
-
                 if (y > mean[i] * (1 + sensitivityKinectJump)) {
+                    // move up
                     isJumpingList[i] = true;
-                    console.info("moving up")
                     jumpList[i].push(y)
 
                 } else if (isJumpingList[i] && y < mean[i] * (1 + sensitivityKinectJump / .7)) {
-                    console.warn("jump detected: player", i);
+                    // end of jump
                     let top = Math.max(...jumpList[i]);
                     jumpMaxList[i].push(top);
                     if (top > highestJump[i]) highestJump[i] = top;
                     if (top < lowestJump[i]) lowestJump[i] = top;
                     let jumpPercentage = ((top - lowestJump[i])) / (highestJump[i] - lowestJump[i])
                     if (isNaN(jumpPercentage)) jumpPercentage = 1;
-                    socket.send(JSON.stringify({
-                        jump: {
-                            force: jumpPercentage,
-                            player: i
+                    if (!isCalibrating) {
+                        let player;
+                        if(calibratedIndices.includes(i)){
+                            calibratedIndices.forEach((val, j)=>{
+                                if (val === i){
+                                    player = j;
+                                }
+                            })
                         }
-                    }));
+                        if (!player) player = i;
+                        console.warn("jump detected: player", player);
+                        socket.send(JSON.stringify({
+                            jump: {
+                                force: jumpPercentage,
+                                player: player
+                            }
+                        }));
+                    } else {
+                        if (calibratedIndices[calibratingPlayer] !== i) console.info("calibration player changed");
+                        calibratedIndices[calibratingPlayer] = i;
+                    }
                     jumpList[i] = [];
                     isJumpingList[i] = false;
                     OnlyOneStart[i] = false;
                     jumpLength[i] = undefined
                 }
                 if (!OnlyOneStart[i] && isJumpingList[i]) {
+                    // start jump
                     console.log("jump started player", i);
                     socket.send(JSON.stringify({
                         isJumping: {
@@ -117,15 +144,19 @@ wss.on("connection", (socket) => {
                     OnlyOneStart[i] = true;
                 }
                 if (jumpLength[i] && new Date() - jumpLength[i] > 5000) {
+                    // jump timeout, not working correctly
                     console.log("jump timed out");
                     jumpList[i] = [];
                     isJumpingList[i] = false;
                     OnlyOneStart[i] = false;
                     jumpLength[i] = undefined
                 }
+                //endregion
+                //region logging
                 fs.appendFile(`log/body${i}.csv`, `${joint.cameraX}, ${y}, ${joint.cameraZ},${joint.colorX}, ${joint.colorY}, ${joint.depthX}, ${joint.depthY}, ${mean[i]}\n`, () => {
 
                 });
+                // endregion
             }
 
         }
@@ -133,7 +164,7 @@ wss.on("connection", (socket) => {
     });
 });
 
-
+// region routes and server
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
@@ -163,3 +194,4 @@ app.use(function (err, req, res) {
 httpServer.listen(3000);
 httpServer.on("error", onError);
 httpServer.on("listening", onListening);
+// endregion
