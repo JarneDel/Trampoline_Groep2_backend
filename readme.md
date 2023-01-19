@@ -32,6 +32,12 @@ calibrationSuccess: {
 }
 ```
 
+    calibrationJumpDetected : {
+        kinectIndex: i,
+        playerIndex: calibratingPlayer
+    }
+
+
 
 ### Username Generation
 URL: `http://localhost:3000/username`    

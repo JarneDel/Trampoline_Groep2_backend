@@ -61,14 +61,16 @@ wss.on("connection", (socket) => {
     socket.on('message', (msg) => {
         let data = JSON.parse(msg)
         console.log(data)
-        if ("calibration" in data) {
-            console.log("calibration started for player", data.calibration.player)
-            let calibration = data.calibration;
+        if ("status" in data) {
+            console.log("calibration toggle for player", data.player)
+            let calibration = data;
             if (calibration.status === "STARTED") {
+                console.log("Start calib")
                 isCalibrating = true;
                 calibratingPlayer = calibration.player ? 0 : 1
             } else {
                 isCalibrating = false;
+                console.log("calibration finished, ", calibratedIndices)
                 socket.send(JSON.stringify({
                     calibrationSuccess: {
                         indices: calibratedIndices
@@ -125,6 +127,12 @@ wss.on("connection", (socket) => {
                         }));
                     } else {
                         if (calibratedIndices[calibratingPlayer] !== i) console.info("calibration player changed");
+                        socket.send(JSON.stringify({
+                            calibrationJumpDetected : {
+                                kinectIndex: i,
+                                playerIndex: calibratingPlayer
+                            }
+                        }))
                         calibratedIndices[calibratingPlayer] = i;
                     }
                     jumpList[i] = [];
