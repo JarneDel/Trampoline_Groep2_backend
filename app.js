@@ -29,6 +29,7 @@ wss.on("connection", (socket) => {
     console.log("Connection established");
     // region state-management
     let isCalibrating = false;
+    let calibrationPause = false;
     let calibratingPlayer = -1;
     let calibratedIndices = []
     let movingAverageList = [[], [], [], [], [], []]
@@ -58,17 +59,36 @@ wss.on("connection", (socket) => {
         await kinect.close();
         console.log(jumpMaxList);
     });
+
+
+
     socket.on('message', (msg) => {
         let data = JSON.parse(msg)
-        console.log(data)
-        if ("status" in data) {
-            console.log("calibration toggle for player", data.player)
-            let calibration = data;
-            if (calibration.status === "STARTED") {
-                console.log("Start calib")
+        console.info(data)
+        if (!("status" in data)) return
+        console.log("calibration toggle for player", data.player)
+        switch (data.status) {
+            case "STARTED":
+                console.log("Start calibration")
                 isCalibrating = true;
-                calibratingPlayer = calibration.player ? 0 : 1
-            } else {
+                console.log(data.player, "is calibrating")
+                calibratingPlayer = data.player ? 0 : 1
+                break;
+            case "PAUSED":
+                console.log("Pause calibration")
+                isCalibrating = false;
+                calibrationPause = true;
+                break;
+            case "RESUMED":
+                console.log("Resume calibration")
+                isCalibrating = true;
+                calibrationPause = false;
+                break;
+            case "SWITCH_PLAYER":
+                console.log("Switch player")
+                calibratingPlayer = data.player ? 0 : 1
+                break;
+            default:
                 isCalibrating = false;
                 console.log("calibration finished, ", calibratedIndices)
                 socket.send(JSON.stringify({
@@ -76,8 +96,9 @@ wss.on("connection", (socket) => {
                         indices: calibratedIndices
                     }
                 }))
-            }
+                break;
         }
+
     })
 
 
@@ -93,7 +114,8 @@ wss.on("connection", (socket) => {
                 } else {
                     movingAverageList[i].shift()
                     movingAverageList[i].push(y);
-                }``
+                }
+                ``
                 mean[i] = movingAverageList[i].reduce((a, b) => a + b) / movingAverageList[i].length;
                 if (y > mean[i] * (1 + sensitivityKinectJump)) {
                     // move up
@@ -108,11 +130,11 @@ wss.on("connection", (socket) => {
                     if (top < lowestJump[i]) lowestJump[i] = top;
                     let jumpPercentage = ((top - lowestJump[i])) / (highestJump[i] - lowestJump[i])
                     if (isNaN(jumpPercentage)) jumpPercentage = 1;
-                    if (!isCalibrating) {
+                    if (!isCalibrating && !calibrationPause) {
                         let player;
-                        if(calibratedIndices.includes(i)){
-                            calibratedIndices.forEach((val, j)=>{
-                                if (val === i){
+                        if (calibratedIndices.includes(i)) {
+                            calibratedIndices.forEach((val, j) => {
+                                if (val === i) {
                                     player = j;
                                 }
                             })
@@ -125,10 +147,10 @@ wss.on("connection", (socket) => {
                                 player: player
                             }
                         }));
-                    } else {
-                        if (calibratedIndices[calibratingPlayer] !== i) console.info("calibration player changed");
+                    } else if (isCalibrating && !calibrationPause) {
+                        if (i !== calibratedIndices[calibratingPlayer]) console.info("calibration player changed");
                         socket.send(JSON.stringify({
-                            calibrationJumpDetected : {
+                            calibrationJumpDetected: {
                                 kinectIndex: i,
                                 playerIndex: calibratingPlayer
                             }
