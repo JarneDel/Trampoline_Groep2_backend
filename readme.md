@@ -45,8 +45,22 @@ Content-type: application/json
 response-example: `"LonelyHat"`  
 
 ### avatar Generation
-URL: `http://localhost:3000/username/avatar`  
-Content-type: HTML  
-response-example: svg  
+
+response: .png image
+
+```http request
+
+POST http://localhost:3000/username/avatar
+Content-Type: application/json
+
+{
+"id": {{id}}
+}
+
+### get avatar
+
+GET http://localhost:3000/username/avatar/{{id}}
+Content-Type: application/json
 
 
+```
