@@ -60,12 +60,13 @@ wss.on("connection", (socket) => {
     });
     socket.on('message', (msg) => {
         let data = JSON.parse(msg)
+        console.log(data)
         if ("calibration" in data) {
             console.log("calibration started for player", data.calibration.player)
             let calibration = data.calibration;
-            if (calibration.status === "calibrating") {
+            if (calibration.status === "STARTED") {
                 isCalibrating = true;
-                calibratingPlayer = calibration.player ? "p1" : "p2"
+                calibratingPlayer = calibration.player ? 0 : 1
             } else {
                 isCalibrating = false;
                 socket.send(JSON.stringify({
@@ -90,14 +91,14 @@ wss.on("connection", (socket) => {
                 } else {
                     movingAverageList[i].shift()
                     movingAverageList[i].push(y);
-                }
+                }``
                 mean[i] = movingAverageList[i].reduce((a, b) => a + b) / movingAverageList[i].length;
                 if (y > mean[i] * (1 + sensitivityKinectJump)) {
                     // move up
                     isJumpingList[i] = true;
                     jumpList[i].push(y)
 
-                } else if (isJumpingList[i] && y < mean[i] * (1 + sensitivityKinectJump / .7)) {
+                } else if (isJumpingList[i] && y < mean[i] * (1 + sensitivityKinectJump / .8)) {
                     // end of jump
                     let top = Math.max(...jumpList[i]);
                     jumpMaxList[i].push(top);
