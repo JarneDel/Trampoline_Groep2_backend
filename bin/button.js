@@ -9,8 +9,8 @@ export function updateBtn(btnNumber, value) {
         return {btn: 'both'}
     }
     else if (btnState[0]){
-        return {btn: 1}
+        return {btn: "left"}
     }else if (btnState[1]){
-        return {btn: 2}
+        return {btn: "right"}
     }
 }

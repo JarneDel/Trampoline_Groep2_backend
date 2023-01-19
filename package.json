@@ -17,6 +17,7 @@
     "morgan": "~1.9.1",
     "mysql2": "^3.0.1",
     "serialport": "^10.5.0",
+    "sharp": "^0.30.7",
     "unique-names-generator": "^4.7.1",
     "ws": "^8.12.0"
   }

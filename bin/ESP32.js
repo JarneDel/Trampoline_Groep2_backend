@@ -1,6 +1,7 @@
 import {SerialPort} from 'serialport';
 import {ReadlineParser} from '@serialport/parser-readline';
 import {updateBtn} from "./button.js";
+
 const getSerialPort = function (portNumber, baudRate, socket) {
     try {
         baudRate = Number(baudRate) || 115200;
@@ -10,9 +11,10 @@ const getSerialPort = function (portNumber, baudRate, socket) {
             }
         });
     } catch (e) {
-        socket.send(JSON.stringify({log:  e.message}));
+        socket.send(JSON.stringify({log: e.message}));
     }
 }
+
 
 export const SerialSocket = function (socket, portNumber, baudRate) {
     try {
@@ -29,11 +31,14 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
             serial.isOpen && serial.close();
         });
         socket.on('message', function (msg) {
-            if (msg.data.stop) {
+            let data = JSON.parse(msg)
+            if ("stop" in data) {
+                console.log("Serial port stopped")
                 serial.isOpen && serial.close();
             }
-            if (msg.data.start) {
-                !serial.isOpen && serial.close()
+            if ("start" in data) {
+                console.log("Serial port started")
+                !serial.isOpen && serial.open()
             }
         });
         return parser;
@@ -44,14 +49,16 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
 
 }
 
-export const handleData = function (raw, index, socket){
+export const handleData = function (raw, index, socket) {
     let data = JSON.parse(raw)
-    if(data.ButtonState !== undefined) {
+    if (data.ButtonState !== undefined) {
         let btnState = updateBtn(index, data.ButtonState)
         if (btnState !== undefined) {
             console.log("sending button state: ", btnState, "\tButton value is ", data.ButtonState)
             socket.send(JSON.stringify({button: btnState}))
+            return false;
         }
+        console.log(`btn ${index} \tvalue 0`)
     }
 
 }

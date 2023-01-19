@@ -1,1 +1,1 @@
-export const sensitivityKinectJump = .05;
+export const sensitivityKinectJump = .2;
