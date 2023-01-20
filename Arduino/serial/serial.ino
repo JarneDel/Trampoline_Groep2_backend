@@ -1,39 +1,54 @@
-int knop = 14;
+#include <Arduino.h>
 
-bool btnState = 0;
-bool btnUpdated = 0;
+
+#define knop 14
+String type = "left";
+
+bool btnUpdated = false;
+bool btnState = false;
+
+void checkBtnState() {
+    // check if isr detected a debounced flank
+    if (btnUpdated){
+        btnUpdated = false;
+        // print the state of the button
+        Serial.println("{\"ButtonState\":" + String(btnState) + "}");
+    }
+}
+
+
+static unsigned long lastDebounceTime = 0;
+static bool lastBtnState = false;
+unsigned long debounceDelay = 20;
+
+void btnChange(){
+    // update button with 20ms debounce on all flanks in isr
+    unsigned long now = millis();
+    if (now - lastDebounceTime > debounceDelay) {
+        btnState = !digitalRead(knop);
+        if (btnState != lastBtnState) {
+            lastBtnState = btnState;
+            btnUpdated = true;
+        }
+    }
+  }
+
 
 void setup()
 {
     Serial.begin(115200);
     pinMode(knop, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(knop), btnChange, CHANGE);
+    attachInterrupt(knop, btnChange, CHANGE);
 }
 
 void loop()
 {
-    btnState = !digitalRead(knop);
     checkBtnState(); // display the button state
-}
-
-void checkBtnState(void)
-{
-    if (btnUpdated)
+    if (Serial.available() != 0)
     {
-        Serial.println("{\"ButtonState\":" + String(btnState) + "}");
-        btnUpdated = false;
+        String readString = Serial.readString();
+        readString.trim();
+        if (readString != "IDENTIFY") return;
+        Serial.println(R"({"id":")" + type + "\"}");
     }
 }
-
-void btnChange()
-{
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > 30)
-  {
-    btnState = !digitalRead(knop);
-    btnUpdated = true;
-  }
-  last_interrupt_time = interrupt_time;
-}
-

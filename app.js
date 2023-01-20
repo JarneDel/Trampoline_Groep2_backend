@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import {WebSocketServer} from 'ws'
 import userNames from "./routes/userNames.js";
 import database from "./routes/database.js";
+import wsHandler from './bin/wsHandler.js';
 
 // region server
 dotenv.config();
@@ -19,6 +20,7 @@ export const httpServer = createServer(app);
 // add normal websocket support
 export const wss = new WebSocketServer({server: httpServer});
 // moved the wss in /bin/wsHandler.js
+wsHandler()
 //endregion
 
 // region routes and server
