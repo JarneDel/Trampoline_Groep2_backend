@@ -41,7 +41,6 @@ wss.on("connection", (socket) => {
     });
 
 
-
     socket.on('message', (msg) => {
         let data = JSON.parse(msg)
         console.info(data)
@@ -70,6 +69,7 @@ wss.on("connection", (socket) => {
                 break;
             default:
                 isCalibrating = false;
+                calibrationPause = false;
                 console.log("calibration finished, ", calibratedIndices)
                 socket.send(JSON.stringify({
                     calibrationSuccess: {
@@ -123,16 +123,14 @@ wss.on("connection", (socket) => {
                         console.warn("jump detected: player", player);
                         socket.send(JSON.stringify({
                             jump: {
-                                force: jumpPercentage,
-                                player: player
+                                force: jumpPercentage, player: player
                             }
                         }));
                     } else if (isCalibrating && !calibrationPause) {
                         if (i !== calibratedIndices[calibratingPlayer]) console.info("calibration player changed");
                         socket.send(JSON.stringify({
                             calibrationJumpDetected: {
-                                kinectIndex: i,
-                                playerIndex: calibratingPlayer
+                                kinectIndex: i, playerIndex: calibratingPlayer
                             }
                         }))
                         calibratedIndices[calibratingPlayer] = i;
@@ -147,8 +145,7 @@ wss.on("connection", (socket) => {
                     console.log("jump started player", i);
                     socket.send(JSON.stringify({
                         isJumping: {
-                            index: i,
-                            status: 'start'
+                            index: i, status: 'start'
                         }
                     }))
                     jumpLength[i] = new Date();

@@ -28,9 +28,22 @@ export async function postResults(name, score) {
     const conn = mysql.createPool(config);
     const pool = conn.promise();
     let [rows] = await pool.query("INSERT INTO statistics (username, score) VALUES (?, ?);", [name, score]);
-    return rows.affectedRows;
+    return rows.insertId;
   }catch (e) {
     console.warn(e)
     return false
   }
+}
+
+export async function updateResults(id, name){
+    try{
+        const conn = mysql.createPool(config);
+        const pool = conn.promise();
+        let [rows] = await pool.query("UPDATE statistics SET username = ? WHERE id = ?;", [name, id]);
+        return rows.affectedRows;
+    }catch (e) {
+        console.warn(e)
+        return false
+    }
+
 }
