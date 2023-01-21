@@ -2,12 +2,19 @@ import {handleData, SerialSocket} from './ESP32.js';
 import {getKinectConnection} from './kinect.js';
 import Kinect2 from 'kinect2';
 import {sensitivityKinectJump} from '../config.js';
-import fs from 'fs';
 import {wss} from '../app.js';
 import serialport from 'serialport';
 
 export default function () {
     wss.on('connection', async (socket) => {
+        // check if there is already a connection
+        if (wss.clients.size > 1) {
+            socket.send(JSON.stringify({log: "There is already a connection"}));
+            socket.close();
+            return;
+        }
+
+
         console.log('Connection established');
         // region state-management
         let isCalibrating = false;
@@ -96,7 +103,6 @@ export default function () {
                 if (bodyFrame.bodies[i].tracked) {
                     // region jumpDetection
                     const y = bodyFrame.bodies[i].joints[Kinect2.JointType.spineBase].cameraY + 1;
-                    const joint = bodyFrame.bodies[i].joints[Kinect2.JointType.spineBase];
                     if (movingAverageList[i].length < 500) {
                         movingAverageList[i].push(y)
                     } else {
@@ -168,11 +174,7 @@ export default function () {
                         jumpLength[i] = undefined
                     }
                     //endregion
-                    //region logging
-                    fs.appendFile(`log/body${i}.csv`, `${joint.cameraX}, ${y}, ${joint.cameraZ},${joint.colorX}, ${joint.colorY}, ${joint.depthX}, ${joint.depthY}, ${mean[i]}\n`, () => {
 
-                    });
-                    // endregion
                 }
 
             }
