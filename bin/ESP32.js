@@ -64,6 +64,7 @@ export const handleData = function (raw, id, socket) {
 
     if ("ButtonState" in data && index !== null) {
         let btnState = updateBtn(index, data.ButtonState)
+        if (btnState === null) return
         console.log("btnUpdate", index,  data.ButtonState)
         socket.send(JSON.stringify({button: btnState}))
     }
