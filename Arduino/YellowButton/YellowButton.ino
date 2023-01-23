@@ -24,12 +24,14 @@ unsigned long debounceDelay = 20;
 
 void btnChange() {
     // update button with 20ms debounce on all flanks in isr
+
     unsigned long now = millis();
     if (now - lastDebounceTime > debounceDelay) {
         btnState = !digitalRead(knop);
         if (btnState != lastBtnState) {
             lastBtnState = btnState;
             btnUpdated = true;
+            lastDebounceTime = millis();
         }
     }
 }
