@@ -24,6 +24,15 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
         serial.on('open', async function () {
             console.log('Serial port connected');
             serial.write('IDENTIFY\r\n');
+            parser.on('data', (data) => {
+                data = JSON.parse(data);
+                if(!("id" in data)) return;
+                socket.on('message', (msg) => {
+                    msg = JSON.parse(msg);
+                   if (!("btnLed" in msg)) return;
+                   sendLedState(msg.btnLed, serial, data.id);
+                });
+            });
         });
 
         // ...
@@ -41,6 +50,7 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
                 console.log("Serial port started")
                 !serial.isOpen && serial.open()
             }
+
         });
         return parser;
     } catch (error) {
@@ -69,4 +79,15 @@ export const handleData = function (raw, id, socket) {
         socket.send(JSON.stringify({button: btnState}))
     }
 
+
+
+
+}
+
+export const sendLedState = function (state, serial, index) {
+    const id = state.id;
+    console.log("sendLedState", state.led, state.id, index)
+    if (id === index) {
+        serial.write(`${state.led}\r\n`);
+    }
 }
