@@ -39,6 +39,7 @@ void setup() {
     Serial.begin(115200);
     pinMode(knop, INPUT_PULLUP);
     pinMode(led, OUTPUT);
+    // High == off (sinking led)
     digitalWrite(led, HIGH);
     attachInterrupt(knop, btnChange, CHANGE);
 }
@@ -51,6 +52,8 @@ void loop() {
         if (readString == "IDENTIFY") {
             Serial.println(R"({"id":")" + type + "\"}");
         }
+
+        // button led, sinking OUTPUT
         else if (readString == "ON") {
             digitalWrite(led, LOW);
         }

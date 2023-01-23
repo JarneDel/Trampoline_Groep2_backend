@@ -86,8 +86,8 @@ export const handleData = function (raw, id, socket) {
 
 export const sendLedState = function (state, serial, index) {
     const id = state.id;
-    console.log("sendLedState", state.led, state.id, index)
     if (id === index) {
         serial.write(`${state.led}\r\n`);
+        console.log("Turning LED", state.id, state.led,);
     }
 }
