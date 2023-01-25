@@ -6,23 +6,24 @@ import {wss} from '../app.js';
 import serialport from 'serialport';
 
 export default function () {
-    let isCalibrating = false;
-    let calibrationPause = false;
-    let calibratingPlayer = -1;
-    let calibratedIndices = []
-    let movingAverageList = [[], [], [], [], [], []]
-    let jumpList = [[], [], [], [], [], []]
-    let jumpMaxList = [[], [], [], [], [], []];
-    let isJumpingList = [];
-    let jumpLength = []
-    let OnlyOneStart = [0, 0, 0, 0, 0, 0]
-    let mean = [0, 0, 0, 0, 0, 0]
-    let highestJump = [0, 0, 0, 0, 0, 0];
-    let lowestJump = [5, 5, 5, 5, 5, 5];
-
-
 
     wss.on('connection', async (socket) => {
+
+        // region Variables
+        let isCalibrating = false;
+        let calibrationPause = false;
+        let calibratingPlayer = -1;
+        let calibratedIndices = []
+        let movingAverageList = [[], [], [], [], [], []]
+        let jumpList = [[], [], [], [], [], []]
+        let jumpMaxList = [[], [], [], [], [], []];
+        let isJumpingList = [];
+        let jumpLength = []
+        let OnlyOneStart = [0, 0, 0, 0, 0, 0]
+        let mean = [0, 0, 0, 0, 0, 0]
+        let highestJump = [0, 0, 0, 0, 0, 0];
+        let lowestJump = [5, 5, 5, 5, 5, 5];
+        // endregion
         // check if there is already a connection
         if (wss.clients.size > 1) {
             socket.send(JSON.stringify({log: "There is already a connection"}));
@@ -175,5 +176,8 @@ export default function () {
             }
 
         });
+    });
+    wss.on("close", () => {
+        console.log("Connection closed");
     });
 }
