@@ -7,6 +7,15 @@ router.get("/", async (req, res) => {
   console.log(data);
   res.json(data);
 });
+
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  const data = await db.getUserById(id);
+  res.json(data);
+})
+
+
+
 router.post("/", async (req, res) => {
   let { username, score } = req.body;
   let id = await db.postResults(username, score);

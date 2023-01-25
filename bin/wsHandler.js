@@ -129,19 +129,10 @@ export default function () {
                         let jumpPercentage = ((top - lowestJump[i])) / (highestJump[i] - lowestJump[i])
                         if (isNaN(jumpPercentage)) jumpPercentage = 1;
                         if (!isCalibrating && !calibrationPause) {
-                            let player;
-                            if (calibratedIndices.includes(i)) {
-                                calibratedIndices.forEach((val, j) => {
-                                    if (val === i) {
-                                        player = j;
-                                    }
-                                })
-                            }
-                            if (!player) player = i;
-                            console.warn('jump detected: player', player);
+                            console.warn('jump detected: player', i);
                             socket.send(JSON.stringify({
                                 jump: {
-                                    force: jumpPercentage, player: player
+                                    force: jumpPercentage, player: i
                                 }
                             }));
                         } else if (isCalibrating && !calibrationPause) {

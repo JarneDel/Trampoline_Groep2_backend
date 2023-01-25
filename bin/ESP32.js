@@ -29,7 +29,10 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
                 if(!("id" in data)) return;
                 socket.on('message', (msg) => {
                     msg = JSON.parse(msg);
-                   if (!("btnLed" in msg)) return;
+                   if (!("btnLed" in msg)) {
+                       console.log("No btnLed in msg");
+                       return;
+                   }
                    sendLedState(msg.btnLed, serial, data.id);
                 });
             });
@@ -85,9 +88,9 @@ export const handleData = function (raw, id, socket) {
 }
 
 export const sendLedState = function (state, serial, index) {
-    const id = state.id;
+    const id = state.id.toLowerCase();
     if (id === index) {
-        serial.write(`${state.led}\r\n`);
-        console.log("Turning LED", state.id, state.led,);
+        serial.write(`${state.led.toUpperCase()}\r\n`);
+        console.log("Turning LED", id, state.led.toUpperCase(),);
     }
 }

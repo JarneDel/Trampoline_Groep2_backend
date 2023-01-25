@@ -23,6 +23,19 @@ export async function getResults() {
 
 }
 
+export async function getUserById(id) {
+    try{
+        const conn = mysql.createPool(config);
+        const pool = conn.promise();
+        let [rows] = await pool.query("SELECT * FROM statistics WHERE id = ?", [id]);
+        return rows;
+    }catch (e){
+        console.warn(e)
+        return null;
+    }
+}
+
+
 export async function postResults(name, score) {
   try {
     const conn = mysql.createPool(config);
