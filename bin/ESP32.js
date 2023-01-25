@@ -21,6 +21,7 @@ export const SerialSocket = function (socket, portNumber, baudRate) {
         console.info('SerialSocket: ', portNumber, baudRate);
         const serial = getSerialPort(portNumber, baudRate, socket);
         const parser = serial.pipe(new ReadlineParser({delimiter: '\r\n'}));
+        serial.write(`ON\r\n`);
         serial.on('open', async function () {
             console.log('Serial port connected');
             serial.write('IDENTIFY\r\n');

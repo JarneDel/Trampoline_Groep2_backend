@@ -46,9 +46,9 @@ export default function () {
                 let parser = SerialSocket(socket, port.path, 115200)
                     let id = null;
                     parser.on('data', (data) => {
-                    let res = handleData(data, id, socket);
-                    if (res) {
-                        id = res;
+                        let res = handleData(data, id, socket);
+                        if (res) {
+                            id = res;
                     }
             });
            }
