@@ -9,6 +9,10 @@ import {WebSocketServer} from 'ws'
 import userNames from "./routes/userNames.js";
 import database from "./routes/database.js";
 import wsHandler from './bin/wsHandler.js';
+import fs from "fs";
+
+// create avatars folder if not exists
+fs.mkdirSync('public/avatars', {recursive: true})
 
 // region server
 dotenv.config();
