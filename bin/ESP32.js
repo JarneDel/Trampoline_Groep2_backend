@@ -41,6 +41,7 @@ const SerialSocket = function (portNumber, baudRate) {
 
         // listen for socket close and close serial port
         _socket.on('close', () => {
+            sendLedState({id: _id, led: "off"}, serial, _id)
             serial.isOpen && serial.close();
         });
 
