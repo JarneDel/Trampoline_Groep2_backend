@@ -68,7 +68,7 @@ function socketMessageHandler(msg){
             return;
         }
 
-        if ('status' in data) kinect2.calibration();
+        if ('status' in data) kinect2.calibration(data);
     } catch (e) {
         console.error("error parsing socket message", e);
     }
