@@ -1,9 +1,7 @@
 let btnState = [false, false]
 let btn = [false, false, false]
 
-
-
-export function updateBtn(btnNumber, value) {
+export function getButtonState(btnNumber, value) {
     let out = {};
     btnState[btnNumber] = value;
 
