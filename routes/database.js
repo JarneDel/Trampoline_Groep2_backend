@@ -1,24 +1,40 @@
-import * as db from '../bin/db.js'
+import * as db from "../bin/db.js";
 import express from "express";
 const router = express.Router();
 
+router.get("/", async (req, res) => {
+  let data = await db.getResults();
+  console.log(data);
+  res.json(data);
+});
 
-router.get('/', async (req, res) => {
-    let data = await db.getResults()
-    console.log(data)
-    res.json(data)
-})
-router.post('/', async (req, res) =>{
-    let name = req.body.name;
-    let score = req.body.score;
-    let data = await db.postResults(name, score)
-    console.log(data)
-    if (data > 0){
-        res.sendStatus(201);
-    }else{
-        res.sendStatus(500);
-    }
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  const data = await db.getUserById(id);
+  res.json(data);
 })
 
 
-export default router
+
+router.post("/", async (req, res) => {
+  let { username, score } = req.body;
+  let id = await db.postResults(username, score);
+  console.log(id);
+  if (id) {
+    res.status(201).json({ id: id });
+  } else {
+    res.sendStatus(500);
+  }
+});
+
+router.put("/", async (req, res) => {
+  let { id, username } = req.body;
+  let result = await db.updateResults(id, username);
+  if (result > 0) {
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(500);
+  }
+});
+
+export default router;

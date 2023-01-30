@@ -2,12 +2,16 @@
 
 ## Websocket data
 ### button
-both buttons pressed:    
-`{btn: 'both'}`  
-player1 pressed:  
-`{btn: 'p1'}`  
-player2 pressed   
-`{btn: 'p2'}`
+index 0: button left  
+index 1: button right  
+index 2: both buttons  
+```json
+{
+    "button": {
+        "btn": [false, false, false]
+    }
+}
+```
 
 ### kinect
 ```json

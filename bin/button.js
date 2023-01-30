@@ -1,16 +1,28 @@
-let btnState = {
-    0: false,
-    1: false,
-}
+let btnState = [false, false]
+let btn = [false, false, false]
 
-export function updateBtn(btnNumber, value) {
-    btnState[btnNumber] = value
-    if (btnState[0] && btnState[1]){
-        return {btn: 'both'}
+export function getButtonState(btnNumber, value) {
+    let out = {};
+    btnState[btnNumber] = value;
+
+    if(btnState[0] && btnState[1] && !btn[2]){
+        btn[2] = true;
+        out.both = "pressed";
     }
-    else if (btnState[0]){
-        return {btn: "left"}
-    }else if (btnState[1]){
-        return {btn: "right"}
+    if((!btnState[0] || !btnState[1]) && btn[2]){
+        btn[2] = false;
+        out.both = "released";
     }
+    if (btnState[btnNumber] && !btn[btnNumber]) {
+        btn[btnNumber] = true;
+        out[btnNumber] = "pressed";
+    }
+    if (!btnState[btnNumber] && btn[btnNumber]) {
+        btn[btnNumber] = false;
+        out[btnNumber] = "released";
+    }
+    if (Object.keys(out).length === 0) return null;
+
+    return {btn: out};
+
 }
