@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node ./app.js --force-node-api-uncaught-exceptions-policy=true"
+    "start": "node  --force-node-api-uncaught-exceptions-policy=true ./app.js "
   },
   "dependencies": {
     "@dicebear/collection": "^5.1.2",
