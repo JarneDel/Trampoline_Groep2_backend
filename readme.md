@@ -1,10 +1,22 @@
 # team project trampoline groep 2
+## prequisites
+- node.js
+- git
+- mysql
+
 
 ## installation
 download node.js: https://nodejs.org/en/download/   
-clone repository: git clone https://github.com/JarneDel/Trampoline_Groep2_backend.git
-run the start batch file
-
+clone repository: git clone https://github.com/JarneDel/Trampoline_Groep2_backend.git  
+run the install script: ./install.bat with database credentials (root has to be username)
+```bat
+    ./install.bat <database password> <database name>
+```
+## run server
+run the start script: ./start.bat
+```bat
+    ./start.bat
+```
 ## Websocket data
 ### button
 index 0: button left  
