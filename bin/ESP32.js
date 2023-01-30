@@ -27,7 +27,12 @@ const SerialSocket = function (portNumber, baudRate) {
         // send identification to know left and right esp
         serial.on('open', async function () {
             console.log('Serial port connected');
-            serial.write('IDENTIFY\r\n');
+            try {
+                serial.write('IDENTIFY\r\n');
+            } catch (e){
+                console.log("error writing to serial port", e);
+            }
+
         });
 
         parser.on('data', (data) => {
@@ -100,8 +105,14 @@ export const handleESPData = function (raw, id) {
 const sendLedState = function (state, serial, index) {
     const id = state.id.toLowerCase();
     if (id === index) {
-        serial.write(`${state.led.toUpperCase()}\r\n`);
-        console.log("Turning LED", id, state.led.toUpperCase(),);
+        try {
+            serial.write(`${state.led.toUpperCase()}\r\n`);
+            console.log("Turning LED", id, state.led.toUpperCase());
+        }
+        catch (e) {
+            console.log("error writing to serial port", e);
+        }
+
     }
 }
 
