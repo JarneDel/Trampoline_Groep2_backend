@@ -1,4 +1,16 @@
-@echo 2
+@echo off
+:: check if node exists
+where node
+if errorlevel 1 (
+    echo node not found
+    echo please install node: https://nodejs.org/en/download/ version 18 and try again
+    pause
+    exit
+) else (
+    echo node found
+)
+
+
 if not exist Trampoline_Groep2_backend (
     echo cloning repo
     git clone --single-branch -b main https://github.com/JarneDel/Trampoline_Groep2_backend.git
