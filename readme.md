@@ -1,5 +1,11 @@
 # team project trampoline groep 2
 
+## installation
+download node.js: https://nodejs.org/en/download/ 
+download installation script: https://raw.githubusercontent.com/JarneDel/Trampoline_Groep2_backend/main/install.bat
+run the batch file
+
+
 ## Websocket data
 ### button
 index 0: button left  
