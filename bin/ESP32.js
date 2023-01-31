@@ -118,6 +118,7 @@ const sendLedState = function (state, serial, index) {
         }
     } catch (e) {
         console.log("error sending led state", e);
+
     }
 }
 
