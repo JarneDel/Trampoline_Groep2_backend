@@ -1,2 +1,8 @@
-cd Trampoline_Groep2_backendcall npm run start
+@echo off
+:loop
+
+call npm run start
+
+goto loop
+
 pause
