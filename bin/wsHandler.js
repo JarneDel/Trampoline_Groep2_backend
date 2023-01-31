@@ -45,7 +45,12 @@ async function websocketConnection(socket) {
     socket.on('close', async () => {
         console.log("connection closed")
         kinect2.resetKinect();
-        await kinect.close();
+        try {
+            await kinect.close();
+        } catch (e) {
+            console.error("error closing kinect", e);
+        }
+
         _socket = null;
     });
 

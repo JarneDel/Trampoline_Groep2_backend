@@ -1,4 +1,7 @@
 @echo off
-cd Trampoline_Groep2_backend
+:loop
+
 call npm run start
+
+goto loop
 pause

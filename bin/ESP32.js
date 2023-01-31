@@ -103,15 +103,21 @@ export const handleESPData = function (raw, id) {
 }
 
 const sendLedState = function (state, serial, index) {
-    const id = state.id.toLowerCase();
-    if (id === index) {
-        try {
-            serial.write(`${state.led.toUpperCase()}\r\n`);
-            console.log("Turning LED", id, state.led.toUpperCase());
+    try {
+
+
+        const id = state.id.toLowerCase();
+        if (id === index) {
+            try {
+                serial.write(`${state.led.toUpperCase()}\r\n`);
+                console.log("Turning LED", id, state.led.toUpperCase());
+            } catch (e) {
+                console.log("error writing to serial port", e);
+            }
+
         }
-        catch (e) {
-            console.log("error writing to serial port", e);
-        }
+    } catch (e) {
+        console.log("error sending led state", e);
 
     }
 }
