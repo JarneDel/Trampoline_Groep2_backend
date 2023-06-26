@@ -6,10 +6,6 @@ import {_socket} from "./wsHandler.js";
 // region variables
 
 let isCalibrating = false;
-let calibrationPause = false;
-let calibratingPlayer = -1;
-let calibratedIndices = []
-
 let movingAverageList = [[], [], [], [], [], []]
 let jumpList = [[], [], [], [], [], []]
 let isJumpingList = [];
@@ -43,7 +39,88 @@ export function getKinectConnection() {
     }
 }
 
+
+const calibrate =  (bodyFrame) => {
+    if (isCalibrating) {
+        const cameraY = bodyFrame.bodies.map((body) => {
+            if (!body.tracked) return 0;
+            return body.joints[Kinect2.JointType.spineMid].cameraX
+        })
+        // check if player is on left or right side of the screen
+        // remove player from list if he is not tracked
+        let calibratingPlayer = []
+        const cameraYTracked = cameraY.filter((y) => y !== 0)
+        if (cameraYTracked.length !== 0 && cameraYTracked.length < 3) {
+            const meanY = cameraYTracked.reduce((a, b) => a + b) / cameraYTracked.length
+            const left = cameraYTracked.filter((y) => y < meanY)
+            const right = cameraYTracked.filter((y) => y > meanY)
+            const middle = cameraYTracked.filter((y) => y === meanY)
+            console.log(right - left < 0.1 ? null : right - left)
+            if (right - left < 0.5) {
+                _socket.send(JSON.stringify({
+                    type: "kinect",
+                    data: {
+                        type: "calibration",
+                        data: {
+                            type: "distance",
+                            value: -1
+                        }
+                    }
+                }))
+                console.log("distance to small")
+            }
+            // find index of player on the left side of the screen
+            const leftIndex = cameraY.indexOf(left[0])
+            // find index of player on the right side of the screen
+            const rightIndex = cameraY.indexOf(right[0])
+            // find middle player index
+            const middleIndex = cameraY.indexOf(middle[0])
+            if (leftIndex !== -1 && rightIndex !== -1) {
+                _socket.send(JSON.stringify({
+                    type: "kinect",
+                    data: {
+                        type: "calibration",
+                        data: {
+                            leftIndex: leftIndex,
+                            rightIndex: rightIndex,
+                            middleIndex: middleIndex
+                        }
+                    }
+                }))
+                console.log("calibration done")
+            } else if (middleIndex !== -1) {
+                _socket.send(JSON.stringify({
+                    type: "kinect",
+                    data: {
+                        type: "calibration",
+                        data: {
+                            middleIndex: middleIndex,
+                            leftIndex: leftIndex,
+                            rightIndex: rightIndex
+                        }
+                    }
+                }))
+            }
+            console.log(leftIndex, rightIndex, middleIndex)
+        }
+        else{
+            _socket.send(JSON.stringify({
+                type: "kinect",
+                data: {
+                    type: "calibration",
+                    data: {
+                        type: "players",
+                        value: cameraYTracked.length
+                    }
+                }
+            }))
+        }
+    }
+}
+
+
 export async function handleKinectBodyFrame(bodyFrame) {
+    calibrate(bodyFrame);
     for (let i = 0; i < bodyFrame.bodies.length; i++) {
         // check if a body is tracked
         if (!bodyFrame.bodies[i].tracked) continue;
@@ -70,22 +147,6 @@ export async function handleKinectBodyFrame(bodyFrame) {
             if (top < lowestJump[i]) lowestJump[i] = top;
             let jumpPercentage = ((top - lowestJump[i])) / (highestJump[i] - lowestJump[i])
             if (isNaN(jumpPercentage)) jumpPercentage = 1;
-            if (!isCalibrating && !calibrationPause) {
-                console.warn('jump detected: player', i);
-                _socket.send(JSON.stringify({
-                    jump: {
-                        force: jumpPercentage, player: i
-                    }
-                }));
-            } else if (isCalibrating && !calibrationPause) {
-                if (i !== calibratedIndices[calibratingPlayer]) console.info('calibration player changed');
-                _socket.send(JSON.stringify({
-                    calibrationJumpDetected: {
-                        kinectIndex: i, playerIndex: calibratingPlayer
-                    }
-                }))
-                calibratedIndices[calibratingPlayer] = i;
-            }
             jumpList[i] = [];
             isJumpingList[i] = false;
             OnlyOneStart[i] = false;
@@ -118,32 +179,9 @@ export function calibration(data){
         case 'STARTED':
             console.log('Start calibration')
             isCalibrating = true;
-            console.log(data.player, 'is calibrating')
-            calibratingPlayer = data.player
             break;
-        case 'PAUSED':
-            console.log('Pause calibration')
+        case 'FINISHED':
+            console.log('Stop calibration')
             isCalibrating = false;
-            calibrationPause = true;
-            break;
-        case 'RESUMED':
-            console.log('Resume calibration')
-            isCalibrating = true;
-            calibrationPause = false;
-            break;
-        case 'SWITCH_PLAYER':
-            console.log('Switch player')
-            calibratingPlayer = data.player
-            break;
-        default:
-            isCalibrating = false;
-            calibrationPause = false;
-            console.log('calibration finished, ',  calibratedIndices)
-            _socket.send(JSON.stringify({
-                calibrationSuccess: {
-                    indices:  calibratedIndices
-                }
-            }))
-            break;
     }
 }
