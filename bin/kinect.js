@@ -147,6 +147,14 @@ export async function handleKinectBodyFrame(bodyFrame) {
             if (top < lowestJump[i]) lowestJump[i] = top;
             let jumpPercentage = ((top - lowestJump[i])) / (highestJump[i] - lowestJump[i])
             if (isNaN(jumpPercentage)) jumpPercentage = 1;
+            if (!isCalibrating) {
+                console.warn('jump detected: player', i);
+                _socket.send(JSON.stringify({
+                    jump: {
+                        force: jumpPercentage, player: i
+                    }
+                }));
+            }
             jumpList[i] = [];
             isJumpingList[i] = false;
             OnlyOneStart[i] = false;
