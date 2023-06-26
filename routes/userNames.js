@@ -1,8 +1,7 @@
 import express from "express";
-import {getRandomName} from "../bin/nameGeneration.js";
-import {getRandomAvatar} from "../bin/avatar.js";
+import { getRandomName } from "../bin/nameGeneration.js";
+import { convertSvgToPng, getRandomAvatarWithSeed } from "../bin/avatar.js";
 import sharp from "sharp";
-import fs from "fs";
 
 const router = express.Router();
 
@@ -13,29 +12,26 @@ router.get('/', function (req, res) {
 
 router.post('/avatar/', async function (req, res) {
     let id = req.body.id;
-    let avatarSvg = getRandomAvatar()
+    let avatarSvg = getRandomAvatarWithSeed(id)
     // convert 156 px to 512 px
     const density = 512 / 156 * 100;
     const compressionLevel = 5;
-    let avatarPng = await sharp(Buffer.from(avatarSvg), {density})
-        .png({compressionLevel})
+    let avatarPng = await sharp(Buffer.from(avatarSvg), { density })
+        .png({ compressionLevel })
         .toBuffer()
     res.type('png').send(avatarPng)
-    // save to file
-    let imgRes = await sharp(Buffer.from(avatarPng))
-        .toFile(`public/avatars/${id}.png`)
-    console.log(imgRes)
 })
 
 
-router.get('/avatar/:id', function (req, res) {
-    fs.readFile(`public/avatars/${req.params.id}.png`, (err, data) => {
-        if (err) {
-            res.status(404).send('Not found')
-        } else {
-            res.type('png').send(data)
-        }
-    })
+router.get('/avatar/:id', async function (req, res) {
+    console.log(req.params.id);
+    const avatar = getRandomAvatarWithSeed(req.params.id)
+    const density = 512 / 156 * 100;
+    const compressionLevel = 5;
+    let avatarPng = await sharp(Buffer.from(avatar), { density })
+        .png({ compressionLevel })
+        .toBuffer()
+    res.type('png').send(avatarPng)
 })
 
 export default router;
