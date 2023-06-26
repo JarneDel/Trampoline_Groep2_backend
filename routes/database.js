@@ -1,4 +1,4 @@
-import * as db from "../bin/db.js";
+import * as db from "../bin/sqlite.js";
 import express from "express";
 const router = express.Router();
 
